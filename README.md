@@ -1,10 +1,15 @@
 # Device Preview
 
+![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
+![Dependencies: none](https://img.shields.io/badge/dependencies-0-brightgreen.svg)
+![Single file](https://img.shields.io/badge/single%20file-HTML-orange.svg)
+![No build](https://img.shields.io/badge/build-none-lightgrey.svg)
+
 A single-file, zero-dependency tool to preview any local URL across **18 real device viewports at once**, in **true CSS pixels** — so the previewed site's own media queries respond exactly as they would on a real phone or tablet.
 
 No build step, no npm install, no Electron. Just one `index.html` you open in a browser.
 
-<!-- TODO: add a screenshot of the device gallery here -->
+![Device Preview — eleven phones rendering the same page at true device widths, each tagged with its current breakpoint](screenshot.png)
 
 ## Why
 
