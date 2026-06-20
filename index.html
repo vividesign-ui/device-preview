@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Device Preview — responsive CSS-px viewer</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#171c24; --line:#2a323d; --txt:#e6edf3; --muted:#8b97a6;
+    --green:#2ea043; --amber:#d29922; --blue:#388bfd; --red:#E22A1C;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px}
+  /* ---- control bar ---- */
+  header{position:sticky;top:0;z-index:50;background:var(--panel);
+    border-bottom:1px solid var(--line);padding:10px 14px;display:flex;
+    flex-wrap:wrap;gap:12px;align-items:center}
+  header h1{font-size:15px;margin:0 8px 0 0;font-weight:700;letter-spacing:.2px}
+  header h1 b{color:var(--red)}
+  .ctl{display:flex;align-items:center;gap:6px}
+  .ctl label{color:var(--muted);font-size:12px;white-space:nowrap}
+  input[type=text]{background:#0b0e13;border:1px solid var(--line);color:var(--txt);
+    border-radius:7px;padding:7px 10px;width:300px;font-size:13px}
+  input[type=range]{width:120px;accent-color:var(--red)}
+  select,button{background:#0b0e13;border:1px solid var(--line);color:var(--txt);
+    border-radius:7px;padding:7px 10px;font-size:13px;cursor:pointer}
+  button:hover,select:hover{border-color:#3d4754}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .seg button{border:0;border-radius:0;border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--red);color:#fff}
+  .legend{margin-left:auto;display:flex;gap:10px;font-size:11px;color:var(--muted);align-items:center;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:4px}
+  .dot{width:9px;height:9px;border-radius:50%}
+  /* ---- gallery ---- */
+  #gallery{display:flex;flex-wrap:wrap;gap:26px 20px;padding:22px;align-items:flex-start}
+  .card{display:flex;flex-direction:column;gap:7px;align-items:center}
+  .meta{display:flex;flex-direction:column;gap:3px;align-items:center;width:100%}
+  .name{font-weight:600;font-size:13px;text-align:center;line-height:1.2}
+  .sub{font-size:11px;color:var(--muted);display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+  .badges{display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+  .badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;letter-spacing:.3px}
+  .b-base,.b-sm{background:rgba(46,160,67,.18);color:var(--green);border:1px solid rgba(46,160,67,.35)}
+  .b-md{background:rgba(210,153,34,.18);color:var(--amber);border:1px solid rgba(210,153,34,.4)}
+  .b-lg,.b-xl,.b-2xl{background:rgba(56,139,253,.18);color:var(--blue);border:1px solid rgba(56,139,253,.4)}
+  .b-eta{background:var(--red);color:#fff}
+  .b-vw{background:#0b0e13;color:var(--muted);border:1px solid var(--line)}
+  /* ---- device frame ---- */
+  .device{background:#05070a;border:2px solid #2b333d;border-radius:20px;
+    padding:11px 7px;position:relative;box-shadow:0 8px 30px rgba(0,0,0,.45)}
+  .device.tablet{border-radius:16px;padding:13px 9px}
+  .screen{position:relative;background:#000;border-radius:6px;overflow:hidden}
+  .screen iframe{border:0;display:block;transform-origin:0 0;background:#fff}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:3;background:#05070a}
+  .n-notch{width:46%;height:15px;border-radius:0 0 12px 12px}
+  .n-island{width:32%;height:13px;top:5px;border-radius:10px}
+  .n-android{width:9px;height:9px;top:5px;border-radius:50%}
+  .n-bar{width:60%;height:5px;top:2px;border-radius:0 0 6px 6px;opacity:.6}
+  .n-tablet{width:6px;height:6px;top:4px;border-radius:50%;opacity:.6}
+  .err{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    padding:14px;text-align:center;color:#ffb4ad;font-size:12px;background:#1a0e0d}
+  .hint{padding:0 22px 30px;color:var(--muted);font-size:12px;line-height:1.5;max-width:960px}
+  .hint code{background:#0b0e13;padding:1px 5px;border-radius:4px;color:#cbd5e1}
+</style>
+</head>
+<body>
+<header>
+  <h1><b>Device</b> Preview</h1>
+  <div class="ctl">
+    <label>Preset</label>
+    <select id="preset">
+      <option value="">— pick —</option>
+      <option value="http://localhost:3000/">Local dev (:3000)</option>
+      <option value="http://localhost:5173/">Vite (:5173)</option>
+      <option value="http://localhost:8080/">Server (:8080)</option>
+    </select>
+  </div>
+  <div class="ctl">
+    <label>URL</label>
+    <input id="url" type="text" value="http://localhost:3000/">
+    <button id="go">Load</button>
+  </div>
+  <div class="ctl">
+    <label>Breakpoints</label>
+    <select id="bpset">
+      <option value="tailwind">Tailwind 640/768/1024/1280/1536</option>
+      <option value="bootstrap">Bootstrap 576/768/992/1200/1400</option>
+    </select>
+  </div>
+  <div class="ctl">
+    <label>Type</label>
+    <div class="seg" id="filter">
+      <button data-f="all" class="on">All</button>
+      <button data-f="phone">Phones</button>
+      <button data-f="tablet">Tablets</button>
+    </div>
+  </div>
+  <div class="ctl">
+    <label>Orientation</label>
+    <div class="seg" id="orient">
+      <button data-o="portrait" class="on">Portrait</button>
+      <button data-o="landscape">Landscape</button>
+      <button data-o="both">Both</button>
+    </div>
+  </div>
+  <div class="ctl">
+    <label>Scale</label>
+    <input id="scale" type="range" min="0.3" max="1" step="0.05" value="0.6">
+    <span id="scaleVal" style="color:var(--muted);font-size:12px;width:34px">60%</span>
+  </div>
+  <div class="ctl">
+    <label><input id="trim" type="checkbox"> subtract browser UI</label>
+  </div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--green)"></i>base/sm</span>
+    <span><i class="dot" style="background:var(--amber)"></i>md</span>
+    <span><i class="dot" style="background:var(--blue)"></i>lg+ (desktop)</span>
+    <span><i class="dot" style="background:var(--red)"></i>mobile/tablet &lt;1024</span>
+  </div>
+</header>
+
+<div id="gallery"></div>
+<p class="hint">
+  Each iframe is sized to the device width in <b>CSS pixels</b>, so the previewed site's own media queries
+  respond exactly as they would on that phone. <b>DPR</b> in the caption is informational (it affects sharpness, not layout).
+  <code>vw:</code> is the real viewport width read back from inside the iframe (emulation check; works same-origin only).
+  "<b>subtract browser UI</b>" trims the height (~90px phone / ~60px tablet) to mimic the address bar — handy to check
+  whether the first screen is visible without scrolling. Scale is visual only (via <code>transform: scale</code>) and does not affect layout.
+  Open this tool from the <b>same origin</b> as the previewed site (not <code>file://</code>), otherwise the <code>vw</code> badge shows "?".
+</p>
+
+<script>
+const DEVICES = [
+  // phones: name, w, h, dpr, type, notch
+  ["iPhone SE (1)",            320, 568, 2,    "phone", "n-bar"],
+  ["iPhone SE / 8",            375, 667, 2,    "phone", "n-bar"],
+  ["iPhone 12 mini",           360, 780, 3,    "phone", "n-notch"],
+  ["iPhone 12–14",             390, 844, 3,    "phone", "n-notch"],
+  ["iPhone 15 / 16",           393, 852, 3,    "phone", "n-island"],
+  ["iPhone 11 / XR",           414, 896, 2,    "phone", "n-notch"],
+  ["iPhone 14–16 Pro Max",     430, 932, 3,    "phone", "n-island"],
+  ["Galaxy S8 / S9",           360, 740, 4,    "phone", "n-android"],
+  ["Galaxy S20 / A-series",    360, 800, 3,    "phone", "n-android"],
+  ["Pixel 7",                  412, 915, 2.625,"phone", "n-android"],
+  ["Galaxy Fold (folded)",     280, 653, 4,    "phone", "n-android"],
+  // tablets
+  ["iPad mini",                768,1024, 2,    "tablet","n-tablet"],
+  ["iPad 10.2\"",              810,1080, 2,    "tablet","n-tablet"],
+  ["iPad Air",                 820,1180, 2,    "tablet","n-tablet"],
+  ["iPad Pro 11\"",            834,1194, 2,    "tablet","n-tablet"],
+  ["iPad Pro 12.9\"",         1024,1366, 2,    "tablet","n-tablet"],
+  ["Galaxy Tab S7",            800,1280, 2,    "tablet","n-tablet"],
+  ["Surface Pro",              912,1368, 2,    "tablet","n-tablet"],
+];
+
+// Breakpoint thresholds: [minWidth, badgeName, cssClass]. Tweak or add your own set.
+const BP = {
+  tailwind: [[1536,'2xl','b-2xl'],[1280,'xl','b-xl'],[1024,'lg','b-lg'],[768,'md','b-md'],[640,'sm','b-sm'],[0,'base','b-base']],
+  bootstrap:[[1400,'xxl','b-2xl'],[1200,'xl','b-xl'],[992,'lg','b-lg'],[768,'md','b-md'],[576,'sm','b-sm'],[0,'base','b-base']],
+};
+
+const state = { url:document.getElementById('url').value, filter:"all",
+  orient:"portrait", scale:0.6, trim:false, bpset:"tailwind" };
+const gallery = document.getElementById('gallery');
+let cards = []; // {dev, orient, screen, iframe, badges, errBox}
+
+function bpClass(w){
+  const set = BP[state.bpset] || BP.tailwind;
+  for(const [min,name,cls] of set){ if(w>=min) return [name,cls]; }
+  return ['base','b-base'];
+}
+
+function build(){
+  gallery.innerHTML=''; cards=[];
+  const list = DEVICES.filter(d=> state.filter==='all' || d[4]===state.filter);
+  const orients = state.orient==='both' ? ['portrait','landscape'] : [state.orient];
+  list.forEach(dev=>{
+    orients.forEach(or=>{
+      const [name,w,h,dpr,type,notch] = dev;
+      const card=document.createElement('div'); card.className='card';
+      const meta=document.createElement('div'); meta.className='meta';
+      const nm=document.createElement('div'); nm.className='name';
+      nm.textContent = name + (state.orient==='both' ? (or==='landscape'?' ⟳':' ▯') : '');
+      const sub=document.createElement('div'); sub.className='sub';
+      const badges=document.createElement('div'); badges.className='badges';
+      meta.append(nm,sub,badges);
+
+      const device=document.createElement('div'); device.className='device '+type;
+      const screen=document.createElement('div'); screen.className='screen';
+      const nEl=document.createElement('div'); nEl.className='notch '+notch;
+      const iframe=document.createElement('iframe');
+      const errBox=document.createElement('div'); errBox.className='err'; errBox.style.display='none';
+      iframe.src=state.url;
+      const c={dev,or,screen,iframe,sub,badges,errBox};
+      iframe.addEventListener('load',()=>readVW(c));
+      screen.append(nEl,iframe,errBox);
+      device.append(screen);
+      card.append(meta,device);
+      gallery.append(card);
+      cards.push(c); layoutCard(c);
+    });
+  });
+}
+
+function layoutCard(c){
+  const [name,w,h,dpr,type] = c.dev;
+  const land = c.or==='landscape';
+  const W = land ? h : w;
+  let   H = land ? w : h;
+  if(state.trim){ const trimPx = type==='tablet' ? (land?45:60) : (land?50:90); H = Math.max(H - trimPx, 200); }
+  const s = state.scale;
+  c.iframe.style.width = W+'px';
+  c.iframe.style.height= H+'px';
+  c.iframe.style.transform = 'scale('+s+')';
+  c.screen.style.width = (W*s)+'px';
+  c.screen.style.height= (H*s)+'px';
+  const [bp,cls] = bpClass(W);
+  c.sub.innerHTML = '<span>'+W+' × '+H+' px</span><span>DPR '+dpr+'</span>';
+  c.badges.innerHTML='';
+  const b1=document.createElement('span'); b1.className='badge '+cls; b1.textContent=bp;
+  c.badges.append(b1);
+  if(W<1024){ const e=document.createElement('span'); e.className='badge b-eta'; e.textContent='<1024'; c.badges.append(e); }
+  const vw=document.createElement('span'); vw.className='badge b-vw'; vw.dataset.vw='1'; vw.textContent=c.vwText||'vw…';
+  c.badges.append(vw);
+}
+
+function readVW(c){
+  c.errBox.style.display='none';
+  const vwBadge = c.badges.querySelector('[data-vw]');
+  let real;
+  try{
+    real = c.iframe.contentWindow.innerWidth;       // throws ONLY on cross-origin
+  }catch(e){
+    c.vwText = 'vw ?';
+    if(vwBadge) vwBadge.textContent = c.vwText;
+    c.errBox.textContent='Cannot read viewport (different origin / X-Frame-Options). Layout may not render.';
+    c.errBox.style.display='flex';
+    return;
+  }
+  try{                                              // hide iframe scrollbars — non-critical if it fails
+    const d = c.iframe.contentDocument;
+    if(d && !d.getElementById('__dpv_noscroll')){
+      const st=d.createElement('style'); st.id='__dpv_noscroll';
+      st.textContent='::-webkit-scrollbar{width:0!important;height:0!important;display:none!important}html{scrollbar-width:none!important}';
+      (d.head||d.documentElement).appendChild(st);
+    }
+  }catch(e){ /* non-essential */ }
+  c.vwText = 'vw '+real;                            // remember — survives badge rebuilds on scale/trim/bpset
+  if(vwBadge) vwBadge.textContent = c.vwText;
+}
+
+function applyLayout(){ cards.forEach(layoutCard); }
+
+// --- controls ---
+const presetEl=document.getElementById('preset'), urlEl=document.getElementById('url');
+presetEl.addEventListener('change',()=>{ if(presetEl.value){ urlEl.value=presetEl.value; state.url=presetEl.value; build(); }});
+document.getElementById('go').onclick=()=>{ state.url=urlEl.value.trim(); build(); };
+urlEl.addEventListener('keydown',e=>{ if(e.key==='Enter'){state.url=e.target.value.trim();build();}});
+document.getElementById('bpset').addEventListener('change',e=>{ state.bpset=e.target.value; applyLayout(); });
+document.getElementById('filter').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  [...e.currentTarget.children].forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  state.filter=b.dataset.f; build();
+});
+document.getElementById('orient').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  [...e.currentTarget.children].forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  state.orient=b.dataset.o; build();
+});
+const scaleEl=document.getElementById('scale'), scaleVal=document.getElementById('scaleVal');
+scaleEl.addEventListener('input',()=>{ state.scale=parseFloat(scaleEl.value);
+  scaleVal.textContent=Math.round(state.scale*100)+'%'; applyLayout(); });
+document.getElementById('trim').addEventListener('change',e=>{ state.trim=e.target.checked; applyLayout(); });
+
+build();
+</script>
+</body>
+</html>
